@@ -5,13 +5,13 @@ class ChatBar extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      content: '' 
+      content: '',
+      username: this.props.currentUser.name 
       }
     }
   
   handleKeyPress = (event) => {
     if(event.key === 'Enter'){
-      // console.log(event);
       this.onMessage();
     }
   }
@@ -21,21 +21,21 @@ class ChatBar extends Component {
   }
 
   onMessage() {
-  // console.log('onpost');
     this.props.onNewMessage(this.state.content);
     this.setState({ content: '' });
   }
 
 
   handleUserChange = (event) => {
-    this.props.onNameChange(event.target.value);
+    this.setState({username: event.target.value});
   }
 
-  // NameChange() {
-  //   this.props.onNameChange(this.state.currentUser.name)
-  
-  // }
-
+  // an update message is only sent when a user leaves focus from the
+  // change username input field 
+  // users generally dont have to press enter on change
+  onLeaveFocus = (event) => {
+    this.props.onNameChange(event.target.value);
+  }
 
   render() {
     return (
@@ -45,6 +45,7 @@ class ChatBar extends Component {
           placeholder="Your Name (Optional)"
           defaultValue={this.props.currentUser ? this.props.currentUser.name : undefined}
           onChange={this.handleUserChange}
+          onBlur={this.onLeaveFocus}
            />
         <input
           className="chatbar-message"

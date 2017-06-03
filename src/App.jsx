@@ -3,61 +3,75 @@ import ChatBar from './ChatBar.jsx';
 import MessageList from './MessageList.jsx';
 
 class App extends Component {
-
   constructor(props) {
     super(props);
     this.state = {
-      currentUser: { name: "Bob" }, // optional. if currentUser is not defined, it means the user is Anonymous
-      messages: [
-        {
-          id: 1,
-          username: "Bob",
-          content: "Has anyone seen my marbles?",
-        },
-        {
-          id: 2,
-          username: "Anonymous",
-          content: "No, I think you lost them. You lost your marbles Bob. You lost them for good."
-        }
-      ] 
+      currentUser: { name: "Anonymous" },
+      messages: [],
+      usersConnected: 0,
+      userColor: '#000000'
     }
     this.onNewMessage = this.onNewMessage.bind(this)
     this.onNameChange = this.onNameChange.bind(this)
   }
   
-  
   onNewMessage(content) {
-    this.setState({
-      messages: this.state.messages.concat({id: this.state.messages.length+1, username: this.state.currentUser.name, content: content})
-    })
+    this.socket.send(JSON.stringify({
+      type: "postMessage",
+      username: this.state.currentUser.name,
+      userColor: this.state.userColor,
+      content: content}));
   }
 
   onNameChange(content) {
-    console.log(content);
-    this.setState({currentUser: {name: content}})
+    this.setState({currentUser: {name: content}});
+
+    this.socket.send(JSON.stringify({
+      type: 'postNotification',
+      content: this.state.currentUser.name + ' has changed their name to ' + content
+    }))
   }
 
   componentDidMount() {
     console.log("componentDidMount <App />");
-    setTimeout(() => {
-      console.log("Simulating incoming message");
-      // Add a new message to the list of messages in the data store
-      const newMessage = {id: 3, username: "Michelle", content: "Hello there!"};
-      const messages = this.state.messages.concat(newMessage)
-      // Update the state of the app component.
-      // Calling setState will trigger a call to render() in App and all child components.
-      this.setState({messages: messages})
-      console.log(this);
-    }, 3000);
+
+    const client = new WebSocket("ws://localhost:3001/");
+
+    client.onopen = function(connection) {
+    }
+
+    this.socket = client; 
+
+    client.onmessage = (message) => {
+      const data = JSON.parse(message.data);
+
+      switch(data.type) {
+        case 'incomingMessage':
+          this.setState({messages: this.state.messages.concat(data)});
+          break;
+        case 'incomingNotification':
+          this.setState({messages: this.state.messages.concat(data)});
+          break;
+        case 'initial_connection':
+          // on the initial connect, the server assigns a colour to the user
+          this.setState({userColor: data.userColor})
+          break;
+        default:
+          // everytime a new client connects, the server updates all clients 
+          this.setState({usersConnected: data});
+          break;
+      }
+    }
   }
 
   render() {
-    // console.log('rendering app');
     const { messages, currentUser } = this.state;
+
     return (
       <div>
         <nav className="navbar">
           <a href="/" className="navbar-brand">Chatty</a>
+          <span className="navbar-users"> Users connected: {this.state.usersConnected} </span>
         </nav>
         <MessageList messages={messages}/>
         <ChatBar currentUser={currentUser}
@@ -67,6 +81,5 @@ class App extends Component {
     );
   }
 }
-
 
 export default App;
