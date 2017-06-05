@@ -5,6 +5,7 @@ Chatty app is a single-page application built with ReactJS that allows multiple 
 
 ### Final Product 
 
+![Chatty App](https://github.com/grantran/chatty_app/blob/master/build/final_screenshot.png)
 
 ### Dependencies (Client)
 
